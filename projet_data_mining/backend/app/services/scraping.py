@@ -12,7 +12,7 @@ def scrape_jumia():
     try:
         response = requests.get(url, headers=headers, timeout=10)
 
-        # ⚠️ إذا Jumia بلوكاتك
+        # Jumia
         if response.status_code != 200:
             return fake_data()
 
@@ -54,7 +54,7 @@ def scrape_jumia():
             except:
                 continue
 
-        # إذا ما جاب حتى حاجة
+        # if not found the products
         if not products:
             return fake_data()
 
@@ -65,7 +65,7 @@ def scrape_jumia():
 
 
 # =========================
-# fallback قوي 🔥
+# fallback 
 # =========================
 def fake_data():
     return [
