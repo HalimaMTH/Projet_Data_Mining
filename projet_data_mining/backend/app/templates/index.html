@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<form method="GET">
+    <input type="text" name="q" placeholder="Search product..." />
+    <button type="submit">Search</button>
+</form>
+<head>
+    <title>Data Mining Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #1e3c72;
+            color: rgb(255, 255, 255);
+            padding: 20px;
+        }
+        h1 { margin-bottom: 20px; }
+
+        table {
+            width: 100%;
+            background: white;
+            color: black;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+
+        a {
+            color: hwb(320 0% 1% / 0.537);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📊 Data Mining Dashboard</h1>
+
+<h2>📈 Stats</h2>
+<p>
+Min: {{ stats.min }} |
+Max: {{ stats.max }} |
+Mean: {{ stats.mean }} |
+Median: {{ stats.median }}
+</p>
+
+<h2>📦 Data</h2>
+
+<table>
+<tr>
+    <th>Name</th>
+    <th>Price</th>
+    <th>Cluster</th>
+    <th>Anomaly</th>
+    <th>Best</th>
+    <th>Rating</th>
+    <th>Link</th>
+</tr>
+
+{% for item in data %}
+<tr>
+    <td>{{ item.name }}</td>
+    <td>{{ item.price_mad }}</td>
+
+    <td>
+        {% if item.cluster == 0 %}
+            Cheap
+        {% elif item.cluster == 1 %}
+            Medium
+        {% else %}
+            Expensive
+        {% endif %}
+    </td>
+
+    <td>
+        {% if item.anomaly == -1 %}
+            ⚠️ Anomaly
+        {% else %}
+            Normal
+        {% endif %}
+    </td>
+
+    <td>
+        {% if item.best_price %}
+            💰 Best
+        {% else %}
+            -
+        {% endif %}
+    </td>
+
+    <td>{{ item.rating }}</td>
+
+    <td>
+        <a href="{{ item.link }}" target="_blank">View</a>
+    </td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>
