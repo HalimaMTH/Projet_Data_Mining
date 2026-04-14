@@ -1,43 +1,102 @@
 from django.shortcuts import render
 import pandas as pd
-import random
 
+from .services.scraping import scrape_products
 from .services.clustering import apply_clustering
 from .services.anomaly import detect_anomalies
 from .services.stats import compute_stats
 
 
 def home(request):
-    query = request.GET.get("q")
+    try:
+        # =========================
+        # Récupérer la requête utilisateur
+        # =========================
+        query = request.GET.get("q")
 
-    # =========================
-    # simulate scraping
-    # =========================
-    if query:
-        data = [
-            {"name": f"{query} - HP Version", "price": random.randint(4000, 6000), "currency": "MAD", "link": "https://jumia.ma"},
-            {"name": f"{query} - Dell Version", "price": random.randint(4500, 6500), "currency": "MAD", "link": "https://avito.ma"},
-            {"name": f"{query} - Asus Version", "price": random.randint(4200, 6200), "currency": "MAD", "link": "https://amazon.com"},
-        ]
-    else:
-        data = []
+        # =========================
+        # Scraping
+        # =========================
+        if query:
+            data = scrape_products(query)
+        else:
+            data = []
 
-    if not data:
-        return render(request, "index.html")
+        # =========================
+        # Si aucune donnée retournée
+        # =========================
+        if not data:
+            return render(request, "index.html", {
+                "error": "Aucun produit trouvé"
+            })
 
-    df = pd.DataFrame(data)
-    df["price_mad"] = df["price"]
+        # =========================
+        # Transformer en DataFrame
+        # =========================
+        df = pd.DataFrame(data)
 
-    df = apply_clustering(df)
-    df = detect_anomalies(df)
+        # =========================
+        # Nettoyage sécurisé (IMPORTANT)
+        # =========================
 
-    best_price = df["price_mad"].min()
-    df["best_price"] = df["price_mad"] == best_price
+        # Supprimer les lignes sans prix
+        df = df[df["price"].notnull()]
 
-    stats = compute_stats(df)
+        # Supprimer les doublons
+        df = df.drop_duplicates(subset=["name"])
 
-    return render(request, "index.html", {
-        "stats": stats,
-        "data": df.to_dict(orient='records'),
-        "query": query
-    })
+        # Reset index
+        df = df.reset_index(drop=True)
+
+        # ⚠️ Vérifier si DataFrame est vide
+        if df.empty:
+            return render(request, "index.html", {
+                "error": "Aucune donnée exploitable"
+            })
+
+        # =========================
+        # Conversion en MAD
+        # =========================
+        df["price_mad"] = df["price"]
+
+        # =========================
+        # Clustering (avec protection)
+        # =========================
+        if len(df) >= 3:
+            df = apply_clustering(df)
+        else:
+            # Si pas assez de données → cluster simple
+            df["cluster"] = "Medium"
+
+        # =========================
+        # Détection anomalies
+        # =========================
+        if len(df) >= 3:
+            df = detect_anomalies(df)
+        else:
+            df["anomaly"] = 1  # Normal
+
+        # =========================
+        # Best price
+        # =========================
+        best_price = df["price_mad"].min()
+        df["best_price"] = df["price_mad"] == best_price
+
+        # =========================
+        # Stats
+        # =========================
+        stats = compute_stats(df)
+
+        # =========================
+        # Return HTML
+        # =========================
+        return render(request, "index.html", {
+            "stats": stats,
+            "data": df.to_dict(orient='records'),
+            "query": query
+        })
+
+    except Exception as e:
+        return render(request, "index.html", {
+            "error": str(e)
+        })

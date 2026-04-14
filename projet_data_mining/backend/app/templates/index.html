@@ -1,105 +1,210 @@
 <!DOCTYPE html>
-<html>
-<form method="GET">
-    <input type="text" name="q" placeholder="Search product..." />
-    <button type="submit">Search</button>
-</form>
+<html lang="fr">
 <head>
+    <meta charset="UTF-8">
     <title>Data Mining Dashboard</title>
+
     <style>
         body {
-            font-family: Arial;
-            background: #1e3c72;
-            color: rgb(255, 255, 255);
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f8c8dc, #a18cd1);
+            color: #4b3f72;
             padding: 20px;
         }
-        h1 { margin-bottom: 20px; }
+
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .card {
+            background: #fff5f7;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            background: #d63384;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #a61e5c;
+        }
 
         table {
             width: 100%;
             background: white;
-            color: black;
             border-collapse: collapse;
-            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #f8c8dc;
         }
 
         th, td {
-            padding: 10px;
-            border: 1px solid #ccc;
+            padding: 12px;
             text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #fff0f5;
+        }
+
+        img {
+            width: 70px;
+            border-radius: 8px;
+        }
+
+        .best {
+            color: #d63384;
+            font-weight: bold;
+        }
+
+        .anomaly {
+            color: red;
+            font-weight: bold;
+        }
+
+        .normal {
+            color: green;
         }
 
         a {
-            color: hwb(320 0% 1% / 0.537);
+            color: #a18cd1;
             text-decoration: none;
+            font-weight: bold;
         }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
     </style>
 </head>
+
 <body>
 
-<h1>📊 Data Mining Dashboard</h1>
+<div class="container">
 
-<h2>📈 Stats</h2>
-<p>
-Min: {{ stats.min }} |
-Max: {{ stats.max }} |
-Mean: {{ stats.mean }} |
-Median: {{ stats.median }}
-</p>
+    <h1>📊 Data Mining Dashboard</h1>
 
-<h2>📦 Data</h2>
+    <!-- SEARCH -->
+    <div class="card">
+        <form method="GET">
+            <input type="text" name="q" placeholder="Rechercher un produit..." value="{{ query }}">
+            <button type="submit">Search</button>
+        </form>
+    </div>
 
-<table>
-<tr>
-    <th>Name</th>
-    <th>Price</th>
-    <th>Cluster</th>
-    <th>Anomaly</th>
-    <th>Best</th>
-    <th>Rating</th>
-    <th>Link</th>
-</tr>
+    <!-- ERROR -->
+    {% if error %}
+    <div class="card">
+        <p class="error">{{ error }}</p>
+    </div>
+    {% endif %}
 
-{% for item in data %}
-<tr>
-    <td>{{ item.name }}</td>
-    <td>{{ item.price_mad }}</td>
+    <!-- STATS -->
+    {% if stats %}
+    <div class="card">
+        <h2>📈 Statistiques</h2>
+        <p>
+            Min: {{ stats.min }} |
+            Max: {{ stats.max }} |
+            Mean: {{ stats.mean }} |
+            Median: {{ stats.median }}
+        </p>
+    </div>
+    {% endif %}
 
-    <td>
-        {% if item.cluster == 0 %}
-            Cheap
-        {% elif item.cluster == 1 %}
-            Medium
-        {% else %}
-            Expensive
-        {% endif %}
-    </td>
+    <!-- TABLE -->
+    {% if data %}
+    <div class="card">
+        <h2>🛒 Produits</h2>
 
-    <td>
-        {% if item.anomaly == -1 %}
-            ⚠️ Anomaly
-        {% else %}
-            Normal
-        {% endif %}
-    </td>
+        <table>
+            <tr>
+                <th>Image</th>
+                <th>Nom</th>
+                <th>Prix</th>
+                <th>Cluster</th>
+                <th>Anomalie</th>
+                <th>Best</th>
+                <th>Lien</th>
+            </tr>
 
-    <td>
-        {% if item.best_price %}
-            💰 Best
-        {% else %}
-            -
-        {% endif %}
-    </td>
+            {% for item in data %}
+            <tr>
 
-    <td>{{ item.rating }}</td>
+                <!-- IMAGE -->
+                <td>
+                    {% if item.image %}
+                        <img src="{{ item.image }}">
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-    <td>
-        <a href="{{ item.link }}" target="_blank">View</a>
-    </td>
-</tr>
-{% endfor %}
+                <!-- NAME -->
+                <td>{{ item.name }}</td>
 
-</table>
+                <!-- PRICE -->
+                <td>{{ item.price_mad }} MAD</td>
+
+                <!-- CLUSTER -->
+                <td>{{ item.cluster }}</td>
+
+                <!-- ANOMALY -->
+                <td>
+                    {% if item.anomaly == -1 %}
+                        <span class="anomaly">⚠️</span>
+                    {% else %}
+                        <span class="normal">✔</span>
+                    {% endif %}
+                </td>
+
+                <!-- BEST -->
+                <td>
+                    {% if item.best_price %}
+                        <span class="best">💰</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <!-- LINK -->
+                <td>
+                    <a href="{{ item.link }}" target="_blank">Voir</a>
+                </td>
+
+            </tr>
+            {% endfor %}
+
+        </table>
+    </div>
+    {% endif %}
+
+</div>
 
 </body>
 </html>

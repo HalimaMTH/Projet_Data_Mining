@@ -1,0 +1,5 @@
+name,price,currency,platform,url
+HP Laptop,5000,MAD,Jumia,https://jumia.ma/hp
+HP Laptop,5200,MAD,Avito,https://avito.ma/hp
+HP Laptop,480,USD,Amazon,https://amazon.com/hp
+HP Laptop,470,EUR,eBay,https://ebay.com/hp
