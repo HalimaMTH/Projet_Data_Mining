@@ -5,6 +5,9 @@
     <title>Data Mining Dashboard</title>
 
     <style>
+        /* =========================
+           STYLE GLOBAL
+        ========================= */
         body {
             font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #f8c8dc, #a18cd1);
@@ -21,6 +24,9 @@
             margin: auto;
         }
 
+        /* =========================
+           CARDS (boîtes)
+        ========================= */
         .card {
             background: #fff5f7;
             padding: 20px;
@@ -29,6 +35,9 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
+        /* =========================
+           INPUT + BUTTON
+        ========================= */
         input {
             padding: 10px;
             border-radius: 8px;
@@ -48,6 +57,9 @@
             background: #a61e5c;
         }
 
+        /* =========================
+           TABLE
+        ========================= */
         table {
             width: 100%;
             background: white;
@@ -75,6 +87,9 @@
             border-radius: 8px;
         }
 
+        /* =========================
+           COULEURS
+        ========================= */
         .best {
             color: #d63384;
             font-weight: bold;
@@ -100,6 +115,14 @@
             font-weight: bold;
         }
 
+        /* =========================
+           STARS
+        ========================= */
+        .stars {
+            color: gold;
+            font-size: 18px;
+        }
+
     </style>
 </head>
 
@@ -107,9 +130,14 @@
 
 <div class="container">
 
+    <!-- =========================
+         TITRE
+    ========================= -->
     <h1>📊 Data Mining Dashboard</h1>
 
-    <!-- SEARCH -->
+    <!-- =========================
+         BARRE DE RECHERCHE
+    ========================= -->
     <div class="card">
         <form method="GET">
             <input type="text" name="q" placeholder="Rechercher un produit..." value="{{ query }}">
@@ -117,14 +145,18 @@
         </form>
     </div>
 
-    <!-- ERROR -->
+    <!-- =========================
+         MESSAGE D'ERREUR
+    ========================= -->
     {% if error %}
     <div class="card">
         <p class="error">{{ error }}</p>
     </div>
     {% endif %}
 
-    <!-- STATS -->
+    <!-- =========================
+         STATISTIQUES
+    ========================= -->
     {% if stats %}
     <div class="card">
         <h2>📈 Statistiques</h2>
@@ -137,12 +169,16 @@
     </div>
     {% endif %}
 
-    <!-- TABLE -->
+    <!-- =========================
+         TABLE DES PRODUITS
+    ========================= -->
     {% if data %}
     <div class="card">
         <h2>🛒 Produits</h2>
 
         <table>
+
+            <!-- HEADER -->
             <tr>
                 <th>Image</th>
                 <th>Nom</th>
@@ -150,9 +186,11 @@
                 <th>Cluster</th>
                 <th>Anomalie</th>
                 <th>Best</th>
+                <th>Rating</th>
                 <th>Lien</th>
             </tr>
 
+            <!-- LOOP PRODUITS -->
             {% for item in data %}
             <tr>
 
@@ -165,16 +203,16 @@
                     {% endif %}
                 </td>
 
-                <!-- NAME -->
+                <!-- NOM -->
                 <td>{{ item.name }}</td>
 
-                <!-- PRICE -->
+                <!-- PRIX -->
                 <td>{{ item.price_mad }} MAD</td>
 
                 <!-- CLUSTER -->
                 <td>{{ item.cluster }}</td>
 
-                <!-- ANOMALY -->
+                <!-- ANOMALIE -->
                 <td>
                     {% if item.anomaly == -1 %}
                         <span class="anomaly">⚠️</span>
@@ -183,7 +221,7 @@
                     {% endif %}
                 </td>
 
-                <!-- BEST -->
+                <!-- BEST PRICE -->
                 <td>
                     {% if item.best_price %}
                         <span class="best">💰</span>
@@ -192,7 +230,24 @@
                     {% endif %}
                 </td>
 
-                <!-- LINK -->
+                <!-- RATING -->
+                <td class="stars">
+                    {% if item.rating == 1 %}
+                        ★☆☆☆☆
+                    {% elif item.rating == 2 %}
+                        ★★☆☆☆
+                    {% elif item.rating == 3 %}
+                        ★★★☆☆
+                    {% elif item.rating == 4 %}
+                        ★★★★☆
+                    {% elif item.rating == 5 %}
+                        ★★★★★
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <!-- LIEN -->
                 <td>
                     <a href="{{ item.link }}" target="_blank">Voir</a>
                 </td>

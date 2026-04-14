@@ -11,15 +11,15 @@ def scrape_products(query="laptop"):
     - récupérer nom
     - récupérer prix
     - récupérer image
-    - récupérer lien du produit (IMPORTANT)
+    - récupérer lien du produit
     """
 
-    # URL de recherche
+    # URL de recherche dynamique
     url = f"{BASE_URL}/catalog/?q={query}"
 
-    # Headers pour éviter blocage
+    # Headers pour éviter blocage du site
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "User-Agent": "Mozilla/5.0",
         "Accept-Language": "fr-FR,fr;q=0.9"
     }
 
@@ -28,19 +28,19 @@ def scrape_products(query="laptop"):
     try:
         response = requests.get(url, headers=headers, timeout=10)
 
-        # Vérification si la requête a réussi
+        # Vérifier si la requête est OK
         if response.status_code != 200:
             return fallback_data(query)
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Sélection des produits
+        # Récupérer tous les produits
         items = soup.find_all("article", class_="prd")
 
-        for item in items[:12]:  # prendre max 12 produits
+        for item in items[:12]:  # max 12 produits
             try:
                 # =========================
-                # NOM DU PRODUIT
+                # NOM
                 # =========================
                 name_tag = item.find("h3", class_="name")
                 name = name_tag.text.strip() if name_tag else "Produit inconnu"
@@ -54,7 +54,7 @@ def scrape_products(query="laptop"):
 
                 price_text = price_tag.text.strip()
 
-                # Nettoyage du prix (ex: "5,000 Dhs")
+                # Nettoyage du prix
                 price_clean = (
                     price_text.replace("Dhs", "")
                     .replace("DH", "")
@@ -65,7 +65,7 @@ def scrape_products(query="laptop"):
                 price = float(price_clean)
 
                 # =========================
-                # IMAGE (gestion lazy loading)
+                # IMAGE
                 # =========================
                 img_tag = item.find("img")
 
@@ -78,12 +78,12 @@ def scrape_products(query="laptop"):
                         ""
                     )
 
-                    # éviter images vides
+                    # Si image invalide → placeholder
                     if not image or image.startswith("data:"):
                         image = "https://via.placeholder.com/150"
 
                 # =========================
-                # LIEN (IMPORTANT)
+                # LIEN
                 # =========================
                 link_tag = item.find("a", class_="core")
 
@@ -91,9 +91,14 @@ def scrape_products(query="laptop"):
                 if link_tag and link_tag.get("href"):
                     link = link_tag["href"]
 
-                    # convertir lien relatif → absolu
+                    # Convertir lien relatif → absolu
                     if link.startswith("/"):
                         link = BASE_URL + link
+
+                # =========================
+                # RATING (fix important)
+                # =========================
+                rating = 4  # valeur par défaut (int)
 
                 # =========================
                 # AJOUT PRODUIT
@@ -104,15 +109,13 @@ def scrape_products(query="laptop"):
                     "image": image,
                     "link": link,
                     "currency": "MAD",
-                    "rating": "⭐ 4"  # fallback rating
+                    "rating": rating   # ✅ INT (important)
                 })
 
             except Exception:
                 continue
 
-        # =========================
         # Si aucun produit trouvé → fallback
-        # =========================
         if not products:
             return fallback_data(query)
 
@@ -123,13 +126,9 @@ def scrape_products(query="laptop"):
 
 
 # =========================
-# DONNÉES DE SECOURS (fallback)
+# FALLBACK (données secours)
 # =========================
 def fallback_data(query):
-    """
-    Données utilisées si scraping échoue
-    """
-
     return [
         {
             "name": f"{query} HP Laptop",
@@ -137,7 +136,7 @@ def fallback_data(query):
             "image": "https://via.placeholder.com/150",
             "link": "https://www.jumia.ma/catalog/?q=" + query,
             "currency": "MAD",
-            "rating": "⭐ 4"
+            "rating": 4   # ✅ int
         },
         {
             "name": f"{query} Dell Laptop",
@@ -145,6 +144,6 @@ def fallback_data(query):
             "image": "https://via.placeholder.com/150",
             "link": "https://www.jumia.ma/catalog/?q=" + query,
             "currency": "MAD",
-            "rating": "⭐ 5"
+            "rating": 5   # ✅ int
         }
     ]
