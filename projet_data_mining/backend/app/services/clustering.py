@@ -2,9 +2,9 @@ from sklearn.cluster import KMeans
 
 
 def apply_clustering(df):
-    # ========================
+    # =======================
     # Préparer les données
-    # ========================
+    # =======================
     X = df[['price_mad']]
 
     # =========================
