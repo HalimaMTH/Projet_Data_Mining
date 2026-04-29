@@ -2,127 +2,284 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Data Mining Dashboard</title>
+    <title>Data Mining Analytics</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
-        /* =========================
-           STYLE GLOBAL
-        ========================= */
+        * { box-sizing: border-box; }
+
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #f8c8dc, #a18cd1);
-            color: #4b3f72;
-            padding: 20px;
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: radial-gradient(circle at top left, #312e81, #0f172a 45%, #020617);
+            color: #e5e7eb;
+            min-height: 100vh;
+            padding: 30px;
         }
 
-        h1 {
+        .container { max-width: 1250px; margin: auto; }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .hero h1 {
+            font-size: 52px;
+            margin: 0;
+            background: linear-gradient(90deg, #ec4899, #8b5cf6, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+        }
+
+        .hero p { color: #cbd5e1; font-size: 17px; }
+
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 28px;
+            border-radius: 28px;
+            margin-bottom: 28px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+        }
+
+        .search-card { display: flex; justify-content: center; }
+
+        form {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 650px;
+        }
+
+        input {
+            flex: 1;
+            padding: 16px 20px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.12);
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        input::placeholder { color: #cbd5e1; }
+
+        button {
+            padding: 16px 28px;
+            border-radius: 18px;
+            border: none;
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        h2 {
+            font-size: 28px;
+            margin-bottom: 22px;
+            color: white;
+        }
+
+        h2 i {
+            color: #ec4899;
+            margin-right: 10px;
+        }
+
+        .error {
+            color: #fecaca;
+            background: rgba(239, 68, 68, 0.18);
+            padding: 15px;
+            border-radius: 16px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 22px;
+        }
+
+        .stat-box {
+            background: linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 24px;
+            padding: 25px;
             text-align: center;
         }
 
-        .container {
-            max-width: 1100px;
-            margin: auto;
+        .stat-box i {
+            font-size: 28px;
+            color: #38bdf8;
+            margin-bottom: 12px;
         }
 
-        /* =========================
-           CARDS (boîtes)
-        ========================= */
-        .card {
-            background: #fff5f7;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .stat-box h3 {
+            color: #cbd5e1;
+            font-size: 15px;
         }
 
-        /* =========================
-           INPUT + BUTTON
-        ========================= */
-        input {
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
+        .stat-box p {
+            font-size: 27px;
+            font-weight: 900;
+            color: #f472b6;
+            margin: 0;
         }
 
-        button {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: none;
-            background: #d63384;
-            color: white;
-            cursor: pointer;
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+            gap: 24px;
+            margin-top: 28px;
         }
 
-        button:hover {
-            background: #a61e5c;
+        .chart {
+            background: rgba(255,255,255,0.96);
+            border-radius: 26px;
+            padding: 22px;
+            text-align: center;
         }
 
-        /* =========================
-           TABLE
-        ========================= */
+        .chart h3 {
+            color: #1e1b4b;
+            font-size: 21px;
+        }
+
+        .chart img {
+            width: 100%;
+            max-height: 330px;
+            object-fit: contain;
+            border-radius: 14px;
+        }
+
+        .best-product-card {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            background: rgba(255,255,255,0.08);
+            padding: 25px;
+            border-radius: 24px;
+        }
+
+        .best-product-card img {
+            width: 140px;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 20px;
+        }
+
+        .best-product-card h3 {
+            color: #f472b6;
+            font-size: 24px;
+        }
+
+        .top-products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .top-card {
+            background: rgba(255,255,255,0.1);
+            padding: 18px;
+            border-radius: 22px;
+            text-align: center;
+        }
+
+        .top-card img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 18px;
+        }
+
+        .top-card h4 {
+            font-size: 14px;
+            color: #e5e7eb;
+        }
+
+        .top-card p {
+            color: #f472b6;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 22px;
+        }
+
         table {
             width: 100%;
-            background: white;
             border-collapse: collapse;
-            border-radius: 10px;
+            background: rgba(255,255,255,0.96);
+            color: #1e1b4b;
+            border-radius: 22px;
             overflow: hidden;
         }
 
         th {
-            background: #f8c8dc;
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            color: white;
+            padding: 17px;
         }
 
-        th, td {
-            padding: 12px;
+        td {
+            padding: 16px;
             text-align: center;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #e5e7eb;
         }
 
-        tr:hover {
-            background: #fff0f5;
+        td img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 18px;
         }
 
-        img {
-            width: 70px;
-            border-radius: 8px;
-        }
+select {
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
 
-        /* =========================
-           COULEURS
-        ========================= */
-        .best {
-            color: #d63384;
+select option {
+    background: #ffffff;
+    color: #000000;
+}
+
+        .badge {
+            padding: 8px 14px;
+            border-radius: 999px;
             font-weight: bold;
+            display: inline-block;
         }
 
-        .anomaly {
-            color: red;
-            font-weight: bold;
-        }
+        .cheap { background: #dcfce7; color: #15803d; }
+        .medium { background: #fef9c3; color: #a16207; }
+        .expensive { background: #fee2e2; color: #b91c1c; }
 
-        .normal {
-            color: green;
-        }
+        .best { color: #ec4899; font-size: 24px; }
+        .anomaly { color: #ef4444; font-size: 22px; }
+        .normal { color: #22c55e; font-size: 22px; }
+        .stars { color: #facc15; font-size: 18px; }
 
         a {
-            color: #a18cd1;
+            color: #a78bfa;
             text-decoration: none;
             font-weight: bold;
         }
 
-        .error {
-            color: red;
-            font-weight: bold;
+        @media (max-width: 700px) {
+            body { padding: 18px; }
+            .hero h1 { font-size: 36px; }
+            form { flex-direction: column; }
+            .best-product-card { flex-direction: column; text-align: center; }
         }
-
-        /* =========================
-           STARS
-        ========================= */
-        .stars {
-            color: gold;
-            font-size: 18px;
-        }
-
     </style>
 </head>
 
@@ -130,132 +287,210 @@
 
 <div class="container">
 
-    <!-- =========================
-         TITRE
-    ========================= -->
-    <h1>📊 Data Mining Dashboard</h1>
-
-    <!-- =========================
-         BARRE DE RECHERCHE
-    ========================= -->
-    <div class="card">
-        <form method="GET">
-            <input type="text" name="q" placeholder="Rechercher un produit..." value="{{ query }}">
-            <button type="submit">Search</button>
-        </form>
+    <div class="hero">
+        <h1>Data Mining Analytics</h1>
+        <p>Analyse intelligente des produits </p>
     </div>
 
-    <!-- =========================
-         MESSAGE D'ERREUR
-    ========================= -->
+    <div class="card search-card">
+    <form method="GET">
+
+        <input type="text" name="q" placeholder="Rechercher un produit..." value="{{ query }}">
+
+        <!--  Sélection du site -->
+        <select name="source">
+            <option value="jumia" {% if request.GET.source == "jumia" %}selected{% endif %}>Jumia</option>
+            <option value="avito" {% if request.GET.source == "avito" %}selected{% endif %}>Avito</option>
+            <option value="all" {% if request.GET.source == "all" %}selected{% endif %}>Tous</option>
+        </select>
+
+        <button type="submit">
+            <i class="fa-solid fa-magnifying-glass"></i> Search
+        </button>
+
+    </form>
+</div>
+
     {% if error %}
     <div class="card">
         <p class="error">{{ error }}</p>
     </div>
     {% endif %}
 
-    <!-- =========================
-         STATISTIQUES
-    ========================= -->
     {% if stats %}
     <div class="card">
-        <h2>📈 Statistiques</h2>
-        <p>
-            Min: {{ stats.min }} |
-            Max: {{ stats.max }} |
-            Mean: {{ stats.mean }} |
-            Median: {{ stats.median }}
-        </p>
+        <h2><i class="fa-solid fa-chart-line"></i> Statistiques générales</h2>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <h3>Total produits</h3>
+                <p>{{ total_products }}</p>
+            </div>
+
+            <div class="stat-box">
+                <i class="fa-solid fa-arrow-down"></i>
+                <h3>Prix minimum</h3>
+                <p>{{ stats.min|floatformat:2 }} MAD</p>
+            </div>
+
+            <div class="stat-box">
+                <i class="fa-solid fa-arrow-up"></i>
+                <h3>Prix maximum</h3>
+                <p>{{ stats.max|floatformat:2 }} MAD</p>
+            </div>
+
+            <div class="stat-box">
+                <i class="fa-solid fa-calculator"></i>
+                <h3>Moyenne</h3>
+                <p>{{ stats.mean|floatformat:2 }} MAD</p>
+            </div>
+
+            <div class="stat-box">
+                <i class="fa-solid fa-chart-simple"></i>
+                <h3>Médiane</h3>
+                <p>{{ stats.median|floatformat:2 }} MAD</p>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            {% if histogram_chart %}
+            <div class="chart">
+                <h3>Distribution des prix</h3>
+                <img src="data:image/png;base64,{{ histogram_chart }}">
+            </div>
+            {% endif %}
+
+            {% if cluster_chart %}
+            <div class="chart">
+                <h3>Répartition des clusters</h3>
+                <img src="data:image/png;base64,{{ cluster_chart }}">
+            </div>
+            {% endif %}
+
+            {% if boxplot_chart %}
+            <div class="chart">
+                <h3>Détection des anomalies</h3>
+                <img src="data:image/png;base64,{{ boxplot_chart }}">
+            </div>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 
-    <!-- =========================
-         TABLE DES PRODUITS
-    ========================= -->
+    {% if best_product %}
+    <div class="card">
+        <h2><i class="fa-solid fa-trophy"></i> Produit recommandé</h2>
+
+        <div class="best-product-card">
+            {% if best_product.image %}
+                <img src="{{ best_product.image }}" alt="meilleur produit">
+            {% endif %}
+
+            <div>
+                <h3>{{ best_product.name }}</h3>
+                <p><strong>Prix :</strong> {{ best_product.price_mad|floatformat:2 }} MAD</p>
+                <p><strong>Cluster :</strong> {{ best_product.cluster }}</p>
+                <a href="{{ best_product.link }}" target="_blank">Voir le produit</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if top_cheap_products %}
+    <div class="card">
+        <h2><i class="fa-solid fa-ranking-star"></i> Top 5 produits les moins chers</h2>
+
+        <div class="top-products">
+            {% for item in top_cheap_products %}
+            <div class="top-card">
+                {% if item.image %}
+                    <img src="{{ item.image }}" alt="produit">
+                {% endif %}
+                <h4>{{ item.name }}</h4>
+                <p>{{ item.price_mad|floatformat:2 }} MAD</p>
+                <a href="{{ item.link }}" target="_blank">Voir</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     {% if data %}
     <div class="card">
-        <h2>🛒 Produits</h2>
+        <h2><i class="fa-solid fa-cart-shopping"></i> Produits analysés</h2>
 
-        <table>
+        <div class="table-wrapper">
+            <table>
+                <tr>
+                    <th>Image</th>
+                    <th>Nom</th>
+                    <th>Prix</th>
+                    <th>Cluster</th>
+                    <th>Anomalie</th>
+                    <th>Best</th>
+                    <th>Rating</th>
+                    <th>Lien</th>
+                </tr>
 
-            <!-- HEADER -->
-            <tr>
-                <th>Image</th>
-                <th>Nom</th>
-                <th>Prix</th>
-                <th>Cluster</th>
-                <th>Anomalie</th>
-                <th>Best</th>
-                <th>Rating</th>
-                <th>Lien</th>
-            </tr>
+                {% for item in data %}
+                <tr>
+                    <td>
+                        {% if item.image %}
+                            <img src="{{ item.image }}" alt="image produit">
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
 
-            <!-- LOOP PRODUITS -->
-            {% for item in data %}
-            <tr>
+                    <td>{{ item.name }}</td>
+                    <td><strong>{{ item.price_mad|floatformat:2 }} MAD</strong></td>
 
-                <!-- IMAGE -->
-                <td>
-                    {% if item.image %}
-                        <img src="{{ item.image }}">
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
+                    <td>
+                        <span class="badge {{ item.cluster|lower }}">
+                            {{ item.cluster }}
+                        </span>
+                    </td>
 
-                <!-- NOM -->
-                <td>{{ item.name }}</td>
+                    <td>
+                        {% if item.anomaly == -1 %}
+                            <span class="anomaly">⚠️</span>
+                        {% else %}
+                            <span class="normal">✔</span>
+                        {% endif %}
+                    </td>
 
-                <!-- PRIX -->
-                <td>{{ item.price_mad }} MAD</td>
+                    <td>
+                        {% if item.best_price %}
+                            <span class="best">💰</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
 
-                <!-- CLUSTER -->
-                <td>{{ item.cluster }}</td>
+                    <td class="stars">
+                        {% if item.rating == 1 %}
+                            ★☆☆☆☆
+                        {% elif item.rating == 2 %}
+                            ★★☆☆☆
+                        {% elif item.rating == 3 %}
+                            ★★★☆☆
+                        {% elif item.rating == 4 %}
+                            ★★★★☆
+                        {% elif item.rating == 5 %}
+                            ★★★★★
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
 
-                <!-- ANOMALIE -->
-                <td>
-                    {% if item.anomaly == -1 %}
-                        <span class="anomaly">⚠️</span>
-                    {% else %}
-                        <span class="normal">✔</span>
-                    {% endif %}
-                </td>
-
-                <!-- BEST PRICE -->
-                <td>
-                    {% if item.best_price %}
-                        <span class="best">💰</span>
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-
-                <!-- RATING -->
-                <td class="stars">
-                    {% if item.rating == 1 %}
-                        ★☆☆☆☆
-                    {% elif item.rating == 2 %}
-                        ★★☆☆☆
-                    {% elif item.rating == 3 %}
-                        ★★★☆☆
-                    {% elif item.rating == 4 %}
-                        ★★★★☆
-                    {% elif item.rating == 5 %}
-                        ★★★★★
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-
-                <!-- LIEN -->
-                <td>
-                    <a href="{{ item.link }}" target="_blank">Voir</a>
-                </td>
-
-            </tr>
-            {% endfor %}
-
-        </table>
+                    <td>
+                        <a href="{{ item.link }}" target="_blank">Voir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
     </div>
     {% endif %}
 
