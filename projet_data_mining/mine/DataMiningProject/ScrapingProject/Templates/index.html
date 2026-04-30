@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Mining Dashboard</title>
+
+    <style>
+        /* ── Reset & Base ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f8c8dc 0%, #c9b8f0 50%, #a18cd1 100%);
+            min-height: 100vh;
+            color: #3d2f6e;
+            padding: 24px 16px;
+        }
+
+        .container { max-width: 1200px; margin: auto; }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 24px;
+            text-shadow: 0 2px 8px rgba(100,60,180,.2);
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: rgba(255,245,248,.95);
+            padding: 22px 24px;
+            border-radius: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 20px rgba(100,60,180,.12);
+            backdrop-filter: blur(4px);
+        }
+
+        /* ── Search bar ── */
+        .search-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-row input[type="text"] {
+            flex: 1 1 280px;
+            padding: 11px 16px;
+            border-radius: 10px;
+            border: 2px solid #d0b8f0;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .search-row input[type="text"]:focus { border-color: #a18cd1; }
+
+        .search-row select {
+            padding: 11px 14px;
+            border-radius: 10px;
+            border: 2px solid #d0b8f0;
+            font-size: .95rem;
+            background: white;
+            color: #3d2f6e;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .search-row button {
+            padding: 11px 22px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #d63384, #a018c0);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity .2s, transform .15s;
+        }
+        .search-row button:hover { opacity: .88; transform: translateY(-1px); }
+
+        /* ── Stats row ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px;
+            margin-top: 8px;
+        }
+        .stat-box {
+            background: white;
+            border-radius: 12px;
+            padding: 14px 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(100,60,180,.08);
+        }
+        .stat-box .label { font-size: .78rem; color: #888; text-transform: uppercase; letter-spacing: .05em; }
+        .stat-box .value { font-size: 1.3rem; font-weight: 700; color: #d63384; margin-top: 4px; }
+
+        /* ── Table ── */
+        .table-wrapper { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 12px;
+            overflow: hidden;
+            font-size: .93rem;
+        }
+
+        thead tr { background: linear-gradient(90deg, #f8c8dc, #d0b8f0); }
+
+        th, td {
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 1px solid #f0e8f8;
+            vertical-align: middle;
+        }
+
+        tbody tr:hover { background: #fff0f8; }
+
+        td img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        /* Product name — left aligned, max width */
+        td.name-cell {
+            text-align: left;
+            max-width: 260px;
+            font-weight: 500;
+        }
+
+        /* ── Badges ── */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .78rem;
+            font-weight: 600;
+        }
+        .badge-cheap     { background: #d4edda; color: #155724; }
+        .badge-medium    { background: #fff3cd; color: #856404; }
+        .badge-expensive { background: #f8d7da; color: #721c24; }
+
+        .badge-site {
+            background: #e8e0ff;
+            color: #5a3e9e;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: .75rem;
+        }
+
+        .anomaly-icon { color: #dc3545; font-weight: bold; }
+        .normal-icon  { color: #28a745; }
+
+        .best-icon { color: #d63384; font-weight: bold; font-size: 1.1rem; }
+
+        .stars { color: gold; font-size: 1rem; letter-spacing: 1px; }
+
+        a.voir-link {
+            background: linear-gradient(135deg, #d63384, #a018c0);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 600;
+            transition: opacity .2s;
+        }
+        a.voir-link:hover { opacity: .8; }
+
+        /* ── Error ── */
+        .error-msg { color: #dc3545; font-weight: 600; font-size: 1rem; }
+
+        /* ── Count ── */
+        .result-count {
+            font-size: .9rem;
+            color: #777;
+            margin-bottom: 12px;
+        }
+        .result-count span { font-weight: 700; color: #d63384; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Titre -->
+    <h1>📊 Data Mining Dashboard</h1>
+
+    <!-- Barre de recherche -->
+    <div class="card">
+        <form method="GET" class="search-row">
+            <input type="text" name="q" placeholder="Rechercher un produit…" value="{{ query|default:'' }}">
+
+            <select name="site">
+                {% for key, label in sites.items %}
+                    <option value="{{ key }}" {% if site == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">🔍 Rechercher</button>
+        </form>
+    </div>
+
+    <!-- Erreur -->
+    {% if error %}
+    <div class="card">
+        <p class="error-msg">⚠️ {{ error }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Statistiques -->
+    {% if stats %}
+    <div class="card">
+        <h2 style="margin-bottom:14px;">📈 Statistiques des prix (MAD)</h2>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="label">Prix min</div>
+                <div class="value">{{ stats.min|floatformat:0 }} MAD</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Prix max</div>
+                <div class="value">{{ stats.max|floatformat:0 }} MAD</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Moyenne</div>
+                <div class="value">{{ stats.mean|floatformat:0 }} MAD</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Médiane</div>
+                <div class="value">{{ stats.median|floatformat:0 }} MAD</div>
+            </div>
+            {% if total %}
+            <div class="stat-box">
+                <div class="label">Produits</div>
+                <div class="value">{{ total }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tableau produits -->
+    {% if data %}
+    <div class="card">
+        <h2 style="margin-bottom:6px;">🛒 Produits trouvés</h2>
+        <p class="result-count">
+            <span>{{ total }}</span> résultats sur
+            {% for key, label in sites.items %}{% if key == site %}<strong>{{ label }}</strong>{% endif %}{% endfor %}
+            pour "<em>{{ query }}</em>"
+        </p>
+
+        <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Nom</th>
+                    <th>Prix (MAD)</th>
+                    <th>Source</th>
+                    <th>Cluster</th>
+                    <th>Anomalie</th>
+                    <th>Best</th>
+                    <th>Note</th>
+                    <th>Lien</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in data %}
+            <tr>
+
+                <!-- Image -->
+                <td>
+                    {% if item.image %}
+                        <img src="{{ item.image }}" alt="product" loading="lazy">
+                    {% else %}
+                        <span style="font-size:2rem">📦</span>
+                    {% endif %}
+                </td>
+
+                <!-- Nom -->
+                <td class="name-cell">{{ item.name|truncatechars:80 }}</td>
+
+                <!-- Prix MAD -->
+                <td><strong>{{ item.price_mad|floatformat:0 }}</strong> MAD
+                    {% if item.currency != "MAD" %}
+                        <br><small style="color:#999;">({{ item.price }} {{ item.currency }})</small>
+                    {% endif %}
+                </td>
+
+                <!-- Source site -->
+                <td><span class="badge badge-site">{{ item.site|default:site }}</span></td>
+
+                <!-- Cluster -->
+                <td>
+                    {% if item.cluster == "Cheap" %}
+                        <span class="badge badge-cheap">🟢 Cheap</span>
+                    {% elif item.cluster == "Expensive" %}
+                        <span class="badge badge-expensive">🔴 Cher</span>
+                    {% else %}
+                        <span class="badge badge-medium">🟡 Moyen</span>
+                    {% endif %}
+                </td>
+
+                <!-- Anomalie -->
+                <td>
+                    {% if item.anomaly == -1 %}
+                        <span class="anomaly-icon" title="Prix suspect">⚠️</span>
+                    {% else %}
+                        <span class="normal-icon">✔️</span>
+                    {% endif %}
+                </td>
+
+                <!-- Meilleur prix -->
+                <td>
+                    {% if item.best_price %}
+                        <span class="best-icon" title="Meilleur prix">💰</span>
+                    {% else %}
+                        –
+                    {% endif %}
+                </td>
+
+                <!-- Rating -->
+                <td class="stars">
+                    {% if item.rating == 1 %}★☆☆☆☆
+                    {% elif item.rating == 2 %}★★☆☆☆
+                    {% elif item.rating == 3 %}★★★☆☆
+                    {% elif item.rating == 4 %}★★★★☆
+                    {% elif item.rating == 5 %}★★★★★
+                    {% else %}–{% endif %}
+                </td>
+
+                <!-- Lien -->
+                <td>
+                    {% if item.link and item.link != "#" %}
+                        <a class="voir-link" href="{{ item.link }}" target="_blank" rel="noopener">Voir →</a>
+                    {% else %}
+                        –
+                    {% endif %}
+                </td>
+
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
