@@ -5,6 +5,7 @@ from .services.scraping import scrape_manager
 from .services.clustering import apply_clustering
 from .services.anomaly import detect_anomalies
 from .services.stats import compute_stats
+from .models import Product, SearchHistory
 
 CURRENCY_RATES = {"MAD": 1, "USD": 10, "EUR": 11, "GBP": 13}
 
@@ -67,6 +68,33 @@ def home(request):
         df["best_price"] = df["price_mad"] == df["price_mad"].min()
         if "site" not in df.columns:
             df["site"] = AVAILABLE_SITES.get(site, site)
+
+        # SAVE TO DATABASE
+        # Save search
+        SearchHistory.objects.create(
+            query=query,
+            site=site,
+            result_count=len(df)
+        )
+        
+        # Save products
+        for _, row in df.iterrows():
+            # Convert anomaly to boolean (handles -1, 1, True, False)
+            anomaly_value = row.get('anomaly', False)
+            is_anomaly = bool(anomaly_value) and anomaly_value != -1
+            
+            Product.objects.create(
+                name=row['name'],
+                price=row['price'],
+                currency=row.get('currency', 'MAD'),
+                price_mad=row['price_mad'],
+                rating=row.get('rating'),
+                site=site,
+                link=row.get('link'),
+                image=row.get('image'),
+                cluster=row.get('cluster'),
+                anomaly=is_anomaly
+            )
 
         return render(request, "index.html", {
             "stats": compute_stats(df),
