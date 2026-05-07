@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataMine Pro — Multi-Site Scraper</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── VARIABLES ── */
+        :root {
+            --pink-light:   #f8c8dc;
+            --pink-mid:     #e88cb0;
+            --pink-hot:     #d63384;
+            --pink-deep:    #a61e5c;
+            --purple-light: #ddd0f5;
+            --purple-mid:   #a18cd1;
+            --purple-deep:  #4b3f72;
+            --cream:        #fff5f7;
+            --white:        #ffffff;
+            --gold:         #f4c542;
+            --red:          #e03030;
+            --green:        #28a96a;
+
+            --bg:           #0e0a18;
+            --surface:      #160e26;
+            --surface2:     #1e1535;
+            --border:       rgba(161,140,209,0.15);
+            --border-hot:   rgba(214,51,132,0.4);
+            --text:         #f0eaff;
+            --text-muted:   #8b7ab5;
+
+            --shadow-glow:  0 0 40px rgba(214,51,132,0.12);
+            --shadow-card:  0 4px 32px rgba(0,0,0,0.4);
+            --radius:       18px;
+            --radius-sm:    10px;
+        }
+
+        /* ── RESET ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* ── AMBIENT BACKGROUND ── */
+        .ambient {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .ambient::before {
+            content: '';
+            position: absolute;
+            top: -20%; left: -10%;
+            width: 60vw; height: 60vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(214,51,132,0.08) 0%, transparent 65%);
+            animation: drift1 20s ease-in-out infinite;
+        }
+        .ambient::after {
+            content: '';
+            position: absolute;
+            bottom: -20%; right: -10%;
+            width: 50vw; height: 50vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(161,140,209,0.1) 0%, transparent 65%);
+            animation: drift2 25s ease-in-out infinite;
+        }
+        @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(5vw,4vw)} }
+        @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-4vw,-5vw)} }
+
+        /* noise grain overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── LAYOUT ── */
+        .wrap {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 28px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── TOP NAV BAR ── */
+        .topbar {
+            background: rgba(14,10,24,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .topbar-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 28px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 18px;
+            letter-spacing: -0.3px;
+            color: var(--text);
+        }
+        .logo-mark {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--pink-hot), var(--purple-mid));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+        .logo span { color: var(--pink-hot); }
+        .nav-badge {
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            background: rgba(214,51,132,0.15);
+            border: 1px solid var(--border-hot);
+            color: var(--pink-mid);
+            padding: 3px 10px;
+            border-radius: 50px;
+            letter-spacing: 1px;
+        }
+
+        /* ── HERO ── */
+        .hero {
+            padding: 72px 0 48px;
+            text-align: center;
+        }
+        .hero-eyebrow {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--pink-hot);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .hero-eyebrow::before, .hero-eyebrow::after {
+            content: '';
+            height: 1px;
+            width: 40px;
+            background: linear-gradient(90deg, transparent, var(--pink-hot));
+        }
+        .hero-eyebrow::after { transform: scaleX(-1); }
+        .hero h1 {
+            font-family: 'Instrument Serif', serif;
+            font-size: clamp(3rem, 6vw, 5.5rem);
+            font-weight: 400;
+            font-style: italic;
+            line-height: 1.0;
+            letter-spacing: -2px;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        .hero h1 em {
+            font-style: normal;
+            background: linear-gradient(135deg, var(--pink-hot), var(--purple-mid));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-sub {
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 18px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── GLASS CARD ── */
+        .glass {
+            background: rgba(30,21,53,0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+            animation: fadeUp 0.5s ease both;
+        }
+        @keyframes fadeUp {
+            from { opacity:0; transform:translateY(24px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+
+        /* ── SEARCH PANEL ── */
+        .search-panel {
+            padding: 32px;
+            margin-bottom: 20px;
+        }
+        .panel-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ── SITE GRID ── */
+        .site-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 700px) { .site-grid { grid-template-columns: repeat(2,1fr); } }
+
+        .site-pill {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 14px 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(14,10,24,0.6);
+            cursor: pointer;
+            transition: all 0.22s ease;
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.3px;
+        }
+        .site-pill:hover {
+            border-color: rgba(214,51,132,0.3);
+            color: var(--text);
+            background: rgba(214,51,132,0.06);
+            transform: translateY(-2px);
+        }
+        .site-pill.active {
+            border-color: var(--pink-hot);
+            background: rgba(214,51,132,0.12);
+            color: var(--pink-light);
+            box-shadow: 0 0 24px rgba(214,51,132,0.2), inset 0 1px 0 rgba(214,51,132,0.2);
+        }
+        .site-pill .site-dot {
+            width: 28px; height: 28px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+        .site-pill.active .active-indicator {
+            position: absolute;
+            top: -4px; right: -4px;
+            width: 8px; height: 8px;
+            background: var(--pink-hot);
+            border-radius: 50%;
+            border: 2px solid var(--bg);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(214,51,132,0.4)} 50%{box-shadow:0 0 0 6px rgba(214,51,132,0)} }
+
+        .dot-jumia      { background: rgba(246,139,30,0.15); }
+        .dot-amazon     { background: rgba(255,153,0,0.15); }
+        .dot-books      { background: rgba(40,169,106,0.15); }
+        .dot-aliexpress { background: rgba(230,46,4,0.15); }
+        .dot-ebay       { background: rgba(0,100,210,0.15); }
+        .dot-avito      { background: rgba(0,165,81,0.15); }
+        .dot-noon       { background: rgba(255,220,0,0.15); }
+        .dot-etsy       { background: rgba(240,114,52,0.15); }
+
+        /* ── SEARCH BAR ── */
+        .search-bar {
+            display: flex;
+            gap: 10px;
+        }
+        .search-field {
+            flex: 1;
+            position: relative;
+        }
+        .search-field svg {
+            position: absolute;
+            left: 18px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        input[type="text"] {
+            width: 100%;
+            background: rgba(14,10,24,0.8);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px 18px 16px 50px;
+            font-family: 'Syne', sans-serif;
+            font-size: 15px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: var(--pink-hot);
+            box-shadow: 0 0 0 3px rgba(214,51,132,0.12);
+        }
+        input[type="text"]::placeholder { color: var(--text-muted); }
+
+        .btn-primary {
+            padding: 0 28px;
+            height: 54px;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: linear-gradient(135deg, var(--pink-hot) 0%, var(--pink-deep) 100%);
+            color: white;
+            font-family: 'Syne', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.22s ease;
+            box-shadow: 0 4px 20px rgba(214,51,132,0.35);
+            display: flex; align-items: center; gap: 8px;
+            white-space: nowrap;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(214,51,132,0.5);
+        }
+        .btn-ghost {
+            padding: 0 20px;
+            height: 54px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Syne', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-ghost:hover {
+            border-color: var(--pink-mid);
+            color: var(--text);
+            background: rgba(214,51,132,0.06);
+        }
+
+        .url-hint {
+            margin-top: 12px;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .url-hint strong { color: var(--pink-mid); }
+
+        /* ── ERROR ── */
+        .error-card {
+            padding: 20px 24px;
+            border-left: 3px solid var(--red);
+            margin-bottom: 20px;
+        }
+        .error-card p {
+            color: #ff8080;
+            font-size: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 700px) { .stats-row { grid-template-columns: repeat(2,1fr); } }
+
+        .stat-tile {
+            padding: 22px 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: rgba(30,21,53,0.6);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-tile:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+        .stat-tile::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--pink-hot), var(--purple-mid));
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .stat-tile:hover::before { opacity: 1; }
+        .stat-tile .stat-icon {
+            font-size: 22px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .stat-tile .stat-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .stat-tile .stat-val {
+            font-family: 'Instrument Serif', serif;
+            font-size: 2rem;
+            font-style: italic;
+            color: var(--text);
+            line-height: 1;
+        }
+        .stat-tile.hot .stat-val { color: var(--pink-hot); }
+        .stat-unit {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 4px;
+        }
+
+        /* ── PRODUCTS PANEL ── */
+        .products-panel {
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+
+        /* ── TOOLBAR ── */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .toolbar-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .count-pill {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            background: rgba(214,51,132,0.2);
+            border: 1px solid var(--border-hot);
+            color: var(--pink-mid);
+            padding: 2px 10px;
+            border-radius: 50px;
+        }
+        .chip {
+            padding: 6px 14px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s;
+        }
+        .chip:hover, .chip.active {
+            border-color: var(--pink-hot);
+            background: rgba(214,51,132,0.1);
+            color: var(--pink-light);
+        }
+        .ml { margin-left: auto; }
+        select {
+            padding: 7px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: rgba(14,10,24,0.8);
+            color: var(--text-muted);
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+        }
+        .view-toggle {
+            display: flex;
+            gap: 2px;
+            background: rgba(14,10,24,0.6);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 3px;
+        }
+        .view-btn {
+            width: 32px; height: 28px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            transition: all 0.15s;
+        }
+        .view-btn.active {
+            background: rgba(214,51,132,0.2);
+            color: var(--pink-hot);
+        }
+
+        /* ── PRODUCT GRID ── */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 16px;
+        }
+
+        .product-card {
+            background: rgba(14,10,24,0.7);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            animation: fadeUp 0.4s ease both;
+            position: relative;
+        }
+        .product-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(214,51,132,0.2);
+            border-color: rgba(214,51,132,0.25);
+        }
+
+        .product-img-wrap {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #160e26, #1e1535);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .product-img-wrap img {
+            width: 75%; height: 75%;
+            object-fit: contain;
+            transition: transform 0.35s ease;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+        }
+        .product-card:hover .product-img-wrap img { transform: scale(1.08); }
+
+        /* Badges */
+        .badge {
+            position: absolute;
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 50px;
+        }
+        .badge-tl { top: 10px; left: 10px; }
+        .badge-tr { top: 10px; right: 10px; }
+        .badge-bl { bottom: 10px; left: 10px; }
+        .badge-best     { background: var(--pink-hot); color: white; }
+        .badge-anomaly  { background: rgba(224,48,48,0.15); border: 1px solid rgba(224,48,48,0.4); color: #ff8080; }
+        .badge-Cheap     { background: rgba(40,169,106,0.15); border: 1px solid rgba(40,169,106,0.35); color: #6eddb0; }
+        .badge-Medium    { background: rgba(244,197,66,0.12); border: 1px solid rgba(244,197,66,0.3); color: #f4c542; }
+        .badge-Expensive { background: rgba(214,51,132,0.12); border: 1px solid var(--border-hot); color: var(--pink-mid); }
+
+        .product-body {
+            padding: 14px 16px 16px;
+            flex: 1;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .product-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .product-price {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.4rem;
+            font-style: italic;
+            color: var(--pink-hot);
+            line-height: 1;
+        }
+        .product-price small {
+            font-size: 0.55em;
+            font-style: normal;
+            font-family: 'DM Mono', monospace;
+            color: var(--text-muted);
+        }
+        .stars { color: var(--gold); font-size: 12px; letter-spacing: 1px; }
+
+        .product-footer {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: auto; padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .product-link {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--pink-mid);
+            text-decoration: none;
+            display: flex; align-items: center; gap: 4px;
+            transition: gap 0.2s, color 0.2s;
+        }
+        .product-link:hover { gap: 8px; color: var(--pink-hot); }
+        .status-tag {
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+        }
+        .anomaly-tag { color: var(--red); }
+        .normal-tag  { color: var(--green); }
+
+        /* ── TABLE VIEW ── */
+        .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th {
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            padding: 14px 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        td {
+            padding: 14px 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(161,140,209,0.07);
+            vertical-align: middle;
+            color: var(--text);
+        }
+        tr:hover td { background: rgba(214,51,132,0.03); }
+        table img { width: 52px; height: 52px; object-fit: contain; border-radius: 8px; background: #1e1535; }
+        td a { color: var(--pink-mid); font-family: 'DM Mono', monospace; font-size: 11px; }
+        td a:hover { color: var(--pink-hot); }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .empty-state .big-icon { font-size: 3.5rem; margin-bottom: 20px; opacity: 0.5; }
+        .empty-state p {
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+        .footer span { color: var(--pink-hot); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 600px) {
+            .search-panel, .products-panel { padding: 20px 16px; }
+            .search-bar { flex-direction: column; }
+            .btn-primary, .btn-ghost { height: 48px; }
+            .hero h1 { font-size: 2.8rem; }
+        }
+
+        /* ── VIEW LOGIC ── */
+        [data-view="table"] { display: none; }
+        body.view-table [data-view="grid"]  { display: none; }
+        body.view-table [data-view="table"] { display: block; }
+
+        /* card stagger delays */
+        .product-card:nth-child(1)  { animation-delay:.04s }
+        .product-card:nth-child(2)  { animation-delay:.08s }
+        .product-card:nth-child(3)  { animation-delay:.12s }
+        .product-card:nth-child(4)  { animation-delay:.16s }
+        .product-card:nth-child(5)  { animation-delay:.20s }
+        .product-card:nth-child(6)  { animation-delay:.24s }
+        .product-card:nth-child(7)  { animation-delay:.28s }
+        .product-card:nth-child(8)  { animation-delay:.32s }
+        .product-card:nth-child(9)  { animation-delay:.36s }
+        .product-card:nth-child(10) { animation-delay:.40s }
+        .product-card:nth-child(11) { animation-delay:.44s }
+        .product-card:nth-child(12) { animation-delay:.48s }
+    </style>
+</head>
+
+<body>
+
+<!-- AMBIENT -->
+<div class="ambient"></div>
+
+<!-- TOP NAV -->
+<nav class="topbar">
+    <div class="topbar-inner">
+        <div class="logo">
+            <div class="logo-mark">⬡</div>
+            DataMine<span>Pro</span>
+        </div>
+        <div class="nav-badge">SCRAPER + ML ENGINE</div>
+    </div>
+</nav>
+
+<div class="wrap">
+
+    <!-- ── HERO ── -->
+    <div class="hero">
+        <div class="hero-eyebrow">Multi-Site Intelligence</div>
+        <h1>Price <em>Intelligence</em><br>Dashboard</h1>
+        <p class="hero-sub">// Scrape · Cluster · Detect Anomalies · Compare</p>
+    </div>
+
+    <!-- ── SEARCH PANEL ── -->
+    <div class="glass search-panel">
+        <div class="panel-label">Select Source</div>
+
+        <!-- SITE GRID -->
+        <div class="site-grid" id="siteGrid">
+            <button class="site-pill active" data-site="jumia" data-url="https://www.jumia.ma/catalog/?q=">
+                <span class="active-indicator"></span>
+                <span class="site-dot dot-jumia">🛒</span>
+                Jumia Maroc
+            </button>
+            <button class="site-pill" data-site="amazon" data-url="https://www.amazon.com/s?k=">
+                <span class="site-dot dot-amazon">📦</span>
+                Amazon
+            </button>
+            <button class="site-pill" data-site="books" data-url="https://books.toscrape.com">
+                <span class="site-dot dot-books">📚</span>
+                Books to Scrape
+            </button>
+            <button class="site-pill" data-site="aliexpress" data-url="https://www.aliexpress.com/wholesale?SearchText=">
+                <span class="site-dot dot-aliexpress">🔴</span>
+                AliExpress
+            </button>
+            <button class="site-pill" data-site="ebay" data-url="https://www.ebay.com/sch/i.html?_nkw=">
+                <span class="site-dot dot-ebay">🔵</span>
+                eBay
+            </button>
+            <button class="site-pill" data-site="avito" data-url="https://www.avito.ma/fr/maroc/tout?search[keywords]=">
+                <span class="site-dot dot-avito">🟢</span>
+                Avito Maroc
+            </button>
+            <button class="site-pill" data-site="noon" data-url="https://www.noon.com/egypt-en/search/?q=">
+                <span class="site-dot dot-noon">🌞</span>
+                Noon
+            </button>
+            <button class="site-pill" data-site="etsy" data-url="https://www.etsy.com/search?q=">
+                <span class="site-dot dot-etsy">🎨</span>
+                Etsy
+            </button>
+        </div>
+
+        <div class="panel-label">Search Query</div>
+
+        <!-- SEARCH BAR -->
+        <form method="GET" id="searchForm">
+            <input type="hidden" name="site" id="hiddenSite" value="{{ site|default:'jumia' }}">
+            <div class="search-bar">
+                <div class="search-field">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="text" name="q" id="searchInput"
+                           placeholder="e.g. laptop, smartphone, shoes..."
+                           value="{{ query }}">
+                </div>
+                <button type="submit" class="btn-primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="5 12 19 12"/><polyline points="13 6 19 12 13 18"/>
+                    </svg>
+                    Run Scrape
+                </button>
+                <button type="button" class="btn-ghost" onclick="clearSearch()">Clear</button>
+            </div>
+        </form>
+
+        <div class="url-hint">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            Target: <strong id="urlDisplay">https://www.jumia.ma/catalog/?q=…</strong>
+        </div>
+    </div>
+
+    <!-- ── ERROR ── -->
+    {% if error %}
+    <div class="glass error-card">
+        <p>⚠ {{ error }}</p>
+    </div>
+    {% endif %}
+
+    <!-- ── STATS ── -->
+    {% if stats %}
+    <div class="stats-row" style="animation-delay:.08s">
+        <div class="stat-tile glass">
+            <span class="stat-icon">📉</span>
+            <div class="stat-label">Min Price</div>
+            <div class="stat-val">{{ stats.min|floatformat:0 }}<span class="stat-unit">MAD</span></div>
+        </div>
+        <div class="stat-tile glass hot">
+            <span class="stat-icon">💎</span>
+            <div class="stat-label">Best Deal</div>
+            <div class="stat-val">{{ stats.min|floatformat:0 }}<span class="stat-unit">MAD</span></div>
+        </div>
+        <div class="stat-tile glass">
+            <span class="stat-icon">〰</span>
+            <div class="stat-label">Average</div>
+            <div class="stat-val">{{ stats.mean|floatformat:0 }}<span class="stat-unit">MAD</span></div>
+        </div>
+        <div class="stat-tile glass">
+            <span class="stat-icon">📈</span>
+            <div class="stat-label">Max Price</div>
+            <div class="stat-val">{{ stats.max|floatformat:0 }}<span class="stat-unit">MAD</span></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── PRODUCTS ── -->
+    {% if data %}
+    <div class="glass products-panel" style="animation-delay:.14s">
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+            <div class="toolbar-title">
+                Products
+                <span class="count-pill">{{ data|length }}</span>
+            </div>
+
+            <button class="chip active" onclick="filterProducts('all', this)">All</button>
+            <button class="chip" onclick="filterProducts('cheap', this)">Cheap</button>
+            <button class="chip" onclick="filterProducts('medium', this)">Medium</button>
+            <button class="chip" onclick="filterProducts('expensive', this)">Expensive</button>
+            <button class="chip" onclick="filterProducts('best', this)">💎 Best</button>
+            <button class="chip" onclick="filterProducts('anomaly', this)">⚠ Anomaly</button>
+
+            <div class="ml" style="display:flex;align-items:center;gap:8px;">
+                <select id="sortSelect" onchange="sortProducts()">
+                    <option value="default">Sort: Default</option>
+                    <option value="price-asc">Price ↑</option>
+                    <option value="price-desc">Price ↓</option>
+                    <option value="rating-desc">Rating ↓</option>
+                    <option value="name-asc">Name A→Z</option>
+                </select>
+                <div class="view-toggle">
+                    <button class="view-btn active" id="btnGrid" onclick="setView('grid')" title="Grid">⊞</button>
+                    <button class="view-btn" id="btnTable" onclick="setView('table')" title="Table">☰</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRID -->
+        <div data-view="grid">
+            <div class="product-grid" id="productGrid">
+                {% for item in data %}
+                <div class="product-card"
+                     data-cluster="{{ item.cluster }}"
+                     data-price="{{ item.price_mad }}"
+                     data-rating="{{ item.rating }}"
+                     data-name="{{ item.name }}"
+                     data-best="{{ item.best_price }}"
+                     data-anomaly="{{ item.anomaly }}">
+
+                    <div class="product-img-wrap">
+                        {% if item.image %}
+                            <img src="{{ item.image }}" alt="{{ item.name }}" loading="lazy"
+                                 onerror="this.src='https://via.placeholder.com/200/160e26/a18cd1?text=✦'">
+                        {% else %}
+                            <img src="https://via.placeholder.com/200/160e26/a18cd1?text=✦" alt="No image">
+                        {% endif %}
+
+                        {% if item.best_price %}
+                            <span class="badge badge-tl badge-best">💎 Best</span>
+                        {% endif %}
+
+                        {% if item.anomaly == -1 %}
+                            <span class="badge badge-tr badge-anomaly">⚠ Anomaly</span>
+                        {% endif %}
+
+                        <span class="badge badge-bl badge-{{ item.cluster }}">{{ item.cluster }}</span>
+                    </div>
+
+                    <div class="product-body">
+                        <div class="product-name">{{ item.name }}</div>
+                        <div class="product-price">
+                            {{ item.price_mad|floatformat:0 }} <small>MAD</small>
+                        </div>
+                        <div class="stars">
+                            {% if item.rating == 1 %}★☆☆☆☆
+                            {% elif item.rating == 2 %}★★☆☆☆
+                            {% elif item.rating == 3 %}★★★☆☆
+                            {% elif item.rating == 4 %}★★★★☆
+                            {% elif item.rating == 5 %}★★★★★
+                            {% else %}—{% endif %}
+                        </div>
+                        <div class="product-footer">
+                            <a href="{{ item.link }}" target="_blank" class="product-link">
+                                View →
+                            </a>
+                            <span class="status-tag">
+                                {% if item.anomaly == -1 %}
+                                    <span class="anomaly-tag">Anomaly</span>
+                                {% else %}
+                                    <span class="normal-tag">Normal</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div data-view="table">
+            <div class="table-wrap">
+                <table id="productTable">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Product</th>
+                            <th>Price (MAD)</th>
+                            <th>Cluster</th>
+                            <th>Anomaly</th>
+                            <th>Best</th>
+                            <th>Rating</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in data %}
+                        <tr data-cluster="{{ item.cluster }}"
+                            data-price="{{ item.price_mad }}"
+                            data-rating="{{ item.rating }}"
+                            data-name="{{ item.name }}"
+                            data-best="{{ item.best_price }}"
+                            data-anomaly="{{ item.anomaly }}">
+                            <td>
+                                {% if item.image %}
+                                    <img src="{{ item.image }}" alt=""
+                                         onerror="this.src='https://via.placeholder.com/60/160e26/a18cd1?text=?'">
+                                {% else %}—{% endif %}
+                            </td>
+                            <td style="text-align:left;max-width:220px;font-weight:600;">{{ item.name }}</td>
+                            <td style="font-family:'Instrument Serif',serif;font-style:italic;font-size:1.1rem;color:var(--pink-hot);">{{ item.price_mad|floatformat:0 }}</td>
+                            <td>
+                                <span class="badge badge-{{ item.cluster }}" style="position:static;font-size:10px;">{{ item.cluster }}</span>
+                            </td>
+                            <td>
+                                {% if item.anomaly == -1 %}
+                                    <span class="anomaly-tag">⚠ Yes</span>
+                                {% else %}
+                                    <span class="normal-tag">✓ No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.best_price %}
+                                    <span style="color:var(--pink-hot);">💎 Yes</span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td class="stars">
+                                {% if item.rating == 1 %}★☆☆☆☆
+                                {% elif item.rating == 2 %}★★☆☆☆
+                                {% elif item.rating == 3 %}★★★☆☆
+                                {% elif item.rating == 4 %}★★★★☆
+                                {% elif item.rating == 5 %}★★★★★
+                                {% else %}—{% endif %}
+                            </td>
+                            <td><a href="{{ item.link }}" target="_blank">View →</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="noFilterResults" style="display:none;" class="empty-state">
+            <div class="big-icon">🔍</div>
+            <p>No products match this filter.</p>
+        </div>
+
+    </div>
+
+    {% else %}
+    {% if not error %}
+    <div class="glass" style="animation-delay:.1s">
+        <div class="empty-state">
+            <div class="big-icon">🛍️</div>
+            <p>Select a marketplace above,<br>type a product, and hit <strong style="color:var(--pink-mid);">Run Scrape</strong>.</p>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+</div><!-- /wrap -->
+
+<div class="footer">
+    Built with <span>♥</span> · Django · BeautifulSoup · KMeans · IsolationForest
+</div>
+
+<script>
+/* ── SITE TABS ── */
+const pills      = document.querySelectorAll('.site-pill');
+const hiddenSite = document.getElementById('hiddenSite');
+const urlDisplay = document.getElementById('urlDisplay');
+
+const urlParams  = new URLSearchParams(window.location.search);
+const activeSite = urlParams.get('site') || 'jumia';
+
+pills.forEach(pill => {
+    if (pill.dataset.site === activeSite) {
+        pills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        hiddenSite.value = activeSite;
+        urlDisplay.textContent = pill.dataset.url + '…';
+    }
+});
+
+pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+        pills.forEach(p => {
+            p.classList.remove('active');
+            const ind = p.querySelector('.active-indicator');
+            if (ind) ind.remove();
+        });
+        pill.classList.add('active');
+        const ind = document.createElement('span');
+        ind.className = 'active-indicator';
+        pill.appendChild(ind);
+        hiddenSite.value = pill.dataset.site;
+        urlDisplay.textContent = pill.dataset.url + '…';
+    });
+});
+
+/* ── CLEAR ── */
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchInput').focus();
+}
+
+/* ── VIEW TOGGLE ── */
+function setView(v) {
+    document.body.classList.toggle('view-table', v === 'table');
+    document.getElementById('btnGrid').classList.toggle('active',  v === 'grid');
+    document.getElementById('btnTable').classList.toggle('active', v === 'table');
+}
+
+/* ── FILTER ── */
+function filterProducts(f, btn) {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+
+    const gridCards = document.querySelectorAll('#productGrid .product-card');
+    const tableRows = document.querySelectorAll('#productTable tbody tr');
+    let anyVisible  = false;
+
+    function shouldShow(el) {
+        if (f === 'all') return true;
+        const cluster = (el.dataset.cluster || '').toLowerCase();
+        const best    = el.dataset.best;
+        const anomaly = el.dataset.anomaly;
+        if (f === 'cheap')     return cluster === 'cheap';
+        if (f === 'medium')    return cluster === 'medium';
+        if (f === 'expensive') return cluster === 'expensive';
+        if (f === 'best')      return best === 'True';
+        if (f === 'anomaly')   return anomaly === '-1';
+        return true;
+    }
+
+    gridCards.forEach(c => {
+        const show = shouldShow(c);
+        c.style.display = show ? '' : 'none';
+        if (show) anyVisible = true;
+    });
+    tableRows.forEach(r => { r.style.display = shouldShow(r) ? '' : 'none'; });
+
+    const noRes = document.getElementById('noFilterResults');
+    if (noRes) noRes.style.display = (!anyVisible && f !== 'all') ? 'block' : 'none';
+}
+
+/* ── SORT ── */
+function sortProducts() {
+    const val  = document.getElementById('sortSelect').value;
+    const grid = document.getElementById('productGrid');
+    if (!grid) return;
+    const cards = Array.from(grid.querySelectorAll('.product-card'));
+    cards.sort((a, b) => {
+        if (val === 'price-asc')   return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+        if (val === 'price-desc')  return parseFloat(b.dataset.price) - parseFloat(a.dataset.price);
+        if (val === 'rating-desc') return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+        if (val === 'name-asc')    return a.dataset.name.localeCompare(b.dataset.name);
+        return 0;
+    });
+    cards.forEach(c => grid.appendChild(c));
+}
+</script>
+
+</body>
+</html>
